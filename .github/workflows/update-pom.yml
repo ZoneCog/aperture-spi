@@ -1,0 +1,42 @@
+name: Check and Update POM
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'adopt'
+        java-version: '11'
+
+    - name: Install Maven
+      run: sudo apt-get install maven -y
+
+    - name: Check and Update POM Repositories
+      run: |
+        python3 scripts/update_pom.py
+
+    - name: Build with Maven
+      run: mvn clean install
+
+    - name: Commit and Push Changes
+      run: |
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        git add pom.xml
+        git commit -m "Update POM repositories"
+        git push
+      if: success() && steps.update_pom.outputs.updated == 'true'
